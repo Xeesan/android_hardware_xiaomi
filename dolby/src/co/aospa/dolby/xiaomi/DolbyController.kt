@@ -67,15 +67,22 @@ internal class DolbyController private constructor(
     internal val effectGeneration = _effectGeneration.asStateFlow()
     private var appProfileOverride: Int? = null
 
-    // Restore current profile on every media session
+    // Restore current profile on media session if effect control is lost or pending
     private val playbackCallback = object : AudioPlaybackCallback() {
         override fun onPlaybackConfigChanged(configs: List<AudioPlaybackConfiguration>) {
             val isPlaying = configs.any {
                 it.playerState == AudioPlaybackConfiguration.PLAYER_STATE_STARTED
             }
             dlog(TAG, "onPlaybackConfigChanged: isPlaying=$isPlaying")
-            if (isPlaying)
-                restoreCurrentProfileSafely()
+            if (isPlaying) {
+                val needsRestore = synchronized(settingsLock) {
+                    val effect = dolbyEffect
+                    effect == null || !hasControl(effect) || recoveryRetryScheduled
+                }
+                if (needsRestore) {
+                    restoreCurrentProfileSafely()
+                }
+            }
         }
     }
 

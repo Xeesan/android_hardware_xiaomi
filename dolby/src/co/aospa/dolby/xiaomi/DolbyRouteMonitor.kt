@@ -200,7 +200,7 @@ internal class DolbyRouteMonitor(
         synchronized(lock) {
             if (registration !== current) return
             handler.removeCallbacks(current.changed)
-            handler.post(current.changed)
+            handler.postDelayed(current.changed, ROUTE_CHANGE_DEBOUNCE_MS)
         }
     }
 
@@ -223,5 +223,6 @@ internal class DolbyRouteMonitor(
 
     companion object {
         private const val TAG = "DolbyRouteMonitor"
+        private const val ROUTE_CHANGE_DEBOUNCE_MS = 500L
     }
 }
